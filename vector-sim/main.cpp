@@ -9,7 +9,8 @@
 // can cluster by the top ten lowest, top ten highest, top ten closest to the
 // average. Let's also make it so on rare occasions, there can be negative
 // numbers in each vector of the database, and these simulate bad values that we
-// need to replace with zero
+// need to replace with the average of that n-th element in the x most similar
+// vectors
 
 #define NUM_VECTORS 8192
 #define VECTOR_ELEMS 128
@@ -28,6 +29,23 @@ float cosine_similarity(const embedding &a, const embedding &b) {
   if (denom == 0.0f)
     return 0.0f;
   return numer / denom;
+}
+
+float euclidean_distance(const embedding &a, const embedding &b) {
+  float sum = 0.0f;
+  for (int i = 0; i < VECTOR_ELEMS; i++) {
+    float diff = a[i] - b[i];
+    sum += diff * diff;
+  }
+  return std::sqrt(sum);
+}
+
+float manhattan_distance(const embedding &a, const embedding &b) {
+  float sum = 0.0f;
+  for (int i = 0; i < VECTOR_ELEMS; i++) {
+    sum += std::fabs(a[i] - b[i]);
+  }
+  return sum;
 }
 
 struct Compare {
