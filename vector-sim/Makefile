@@ -1,5 +1,5 @@
 CXX      = clang++
-CXXFLAGS = -std=c++23 -O3 -Xpreprocessor -fopenmp -lomp -I/opt/homebrew/opt/libomp/include -L/opt/homebrew/opt/libomp/lib
+CXXFLAGS = -std=c++23 -O3 -ffast-math -Xpreprocessor -fopenmp -lomp -I/opt/homebrew/opt/libomp/include -L/opt/homebrew/opt/libomp/lib
 DEBUGFLAGS = -g
 
 # Targets
