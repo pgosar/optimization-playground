@@ -104,23 +104,64 @@ std::vector<embedding> init() {
 
 // Compute top-k
 TopKHeap compute_top_k(const std::vector<embedding> &database) {
-  TopKHeap top_k;
+  TopKHeap final_top_k;
+  
+  // Tiling parameters
+  const int TILE_SIZE = 128;
 
-  for (int i = 0; i < NUM_VECTORS; i++) {
-    for (int j = 0; j < i; j++) {
-      const embedding &a = database[i];
-      const embedding &b = database[j];
+  #pragma omp parallel
+  {
+    TopKHeap top_k;
+    
+    #pragma omp for schedule(dynamic)
+    for (int i = 0; i < NUM_VECTORS; i += TILE_SIZE) {
+      // Square blocks
+      for (int j = 0; j < i; j += TILE_SIZE) {
+        for (int ii = i; ii < i + TILE_SIZE; ii++) {
+          const embedding &a = database[ii];
+          for (int jj = j; jj < j + TILE_SIZE; jj++) {
+            const embedding &b = database[jj];
+            float score;
+            if (a[0] > b[0])
+              score = cosine_similarity(a, b);
+            else if (a[1] + b[1] > 1.0f)
+              score = euclidean_distance(a, b);
+            else
+              score = manhattan_distance(a, b);
 
-      float score;
-      if (a[0] > b[0])
-        score = cosine_similarity(a, b);
-      else if (a[1] + b[1] > 1.0f)
-        score = euclidean_distance(a, b);
-      else
-        score = manhattan_distance(a, b);
+            top_k.push({score, ii, jj});
+          }
+        }
+      }
+      
+      // Diagonal block
+      for (int ii = i; ii < i + TILE_SIZE; ii++) {
+         const embedding &a = database[ii];
+         for (int jj = i; jj < ii; jj++) {
+            const embedding &b = database[jj];
+            
+            float score;
+            if (a[0] > b[0])
+              score = cosine_similarity(a, b);
+            else if (a[1] + b[1] > 1.0f)
+              score = euclidean_distance(a, b);
+            else
+              score = manhattan_distance(a, b);
 
-      top_k.push({score, i, j});
+            top_k.push({score, ii, jj});
+         }
+      }
+    }
+    
+    #pragma omp critical
+    {
+      // Merge local heap into final heap
+      for(int k=0; k<top_k.size; ++k) {
+         final_top_k.push(top_k.data[k]);
+      }
     }
   }
-  return top_k;
+  
+  return final_top_k;
 }
+

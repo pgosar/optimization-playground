@@ -1,5 +1,5 @@
 CXX      = clang++
-CXXFLAGS = -std=c++23 -O3
+CXXFLAGS = -std=c++23 -O3 -Xpreprocessor -fopenmp -lomp -I/opt/homebrew/opt/libomp/include -L/opt/homebrew/opt/libomp/lib
 DEBUGFLAGS = -g
 
 # Targets
@@ -35,5 +35,16 @@ run-test: test
 	./$(TEST_TARGET)
 
 # Clean all binaries
+# Clean all binaries
 clean:
-	rm -rf $(TARGET) $(TEST_TARGET) $(TARGET).dSYM $(TEST_TARGET).dSYM
+	rm -rf $(TARGET) $(TEST_TARGET) $(BENCH_TARGET) $(TARGET).dSYM $(TEST_TARGET).dSYM $(BENCH_TARGET).dSYM
+
+# Benchmark
+BENCH_TARGET = benchmark
+BENCH_SRC = benchmark.cpp
+
+benchmark: $(BENCH_SRC) $(LIB_HDR)
+	$(CXX) $(CXXFLAGS) $(BENCH_SRC) -o $(BENCH_TARGET)
+
+run-benchmark: benchmark
+	./$(BENCH_TARGET)
