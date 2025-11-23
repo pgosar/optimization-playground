@@ -1,4 +1,6 @@
 #include "lib.hpp"
+#include <iostream>
+#include <thread>
 
 int main() {
   // so that i have time to attach instruments in Xcode

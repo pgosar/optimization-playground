@@ -1,14 +1,12 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <iostream>
 #include <random>
-#include <thread>
 #include <tuple>
 #include <vector>
 
 #define NUM_VECTORS 8192
-#define VECTOR_ELEMS 128
+#define VECTOR_ELEMS 256
 #define K 200
 
 using embedding = std::array<float, VECTOR_ELEMS>;
@@ -61,7 +59,7 @@ struct TopKHeap {
 };
 
 // Distance functions
-float cosine_similarity(const embedding &a, const embedding &b) {
+inline float cosine_similarity(const embedding &a, const embedding &b) {
   float numer = 0.0f, sum_a = 0.0f, sum_b = 0.0f;
   for (int i = 0; i < VECTOR_ELEMS; i++) {
     numer += a[i] * b[i];
@@ -72,7 +70,7 @@ float cosine_similarity(const embedding &a, const embedding &b) {
   return denom == 0.0f ? 0.0f : numer / denom;
 }
 
-float euclidean_distance(const embedding &a, const embedding &b) {
+inline float euclidean_distance(const embedding &a, const embedding &b) {
   float sum = 0.0f;
   for (int i = 0; i < VECTOR_ELEMS; i++) {
     float diff = a[i] - b[i];
@@ -81,7 +79,7 @@ float euclidean_distance(const embedding &a, const embedding &b) {
   return std::sqrt(sum);
 }
 
-float manhattan_distance(const embedding &a, const embedding &b) {
+inline float manhattan_distance(const embedding &a, const embedding &b) {
   float sum = 0.0f;
   for (int i = 0; i < VECTOR_ELEMS; i++) {
     sum += std::fabs(a[i] - b[i]);
@@ -90,7 +88,7 @@ float manhattan_distance(const embedding &a, const embedding &b) {
 }
 
 // Initialization
-std::vector<embedding> init() {
+inline std::vector<embedding> init() {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<float> dis(0.0f, 1.0f);
@@ -103,17 +101,17 @@ std::vector<embedding> init() {
 }
 
 // Compute top-k
-TopKHeap compute_top_k(const std::vector<embedding> &database) {
+inline TopKHeap compute_top_k(const std::vector<embedding> &database) {
   TopKHeap final_top_k;
-  
+
   // Tiling parameters
   const int TILE_SIZE = 128;
 
-  #pragma omp parallel
+#pragma omp parallel
   {
     TopKHeap top_k;
-    
-    #pragma omp for schedule(dynamic)
+
+#pragma omp for schedule(dynamic)
     for (int i = 0; i < NUM_VECTORS; i += TILE_SIZE) {
       // Square blocks
       for (int j = 0; j < i; j += TILE_SIZE) {
@@ -133,35 +131,34 @@ TopKHeap compute_top_k(const std::vector<embedding> &database) {
           }
         }
       }
-      
+
       // Diagonal block
       for (int ii = i; ii < i + TILE_SIZE; ii++) {
-         const embedding &a = database[ii];
-         for (int jj = i; jj < ii; jj++) {
-            const embedding &b = database[jj];
-            
-            float score;
-            if (a[0] > b[0])
-              score = cosine_similarity(a, b);
-            else if (a[1] + b[1] > 1.0f)
-              score = euclidean_distance(a, b);
-            else
-              score = manhattan_distance(a, b);
+        const embedding &a = database[ii];
+        for (int jj = i; jj < ii; jj++) {
+          const embedding &b = database[jj];
 
-            top_k.push({score, ii, jj});
-         }
+          float score;
+          if (a[0] > b[0])
+            score = cosine_similarity(a, b);
+          else if (a[1] + b[1] > 1.0f)
+            score = euclidean_distance(a, b);
+          else
+            score = manhattan_distance(a, b);
+
+          top_k.push({score, ii, jj});
+        }
       }
     }
-    
-    #pragma omp critical
+
+#pragma omp critical
     {
       // Merge local heap into final heap
-      for(int k=0; k<top_k.size; ++k) {
-         final_top_k.push(top_k.data[k]);
+      for (int k = 0; k < top_k.size; ++k) {
+        final_top_k.push(top_k.data[k]);
       }
     }
   }
-  
+
   return final_top_k;
 }
-

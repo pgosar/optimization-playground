@@ -2,7 +2,6 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
-#include <set>
 #include <vector>
 
 bool float_eq(float a, float b, float eps = 1e-5f) {
@@ -170,7 +169,8 @@ void test_compute_top_k() {
 
   for (int i = 0; i < K; i++) {
     if (!float_eq(actual[i].score, expected[i].score)) {
-      std::cout << "Score mismatch at rank " << i << ": actual=" << actual[i].score
+      std::cout << "Score mismatch at rank " << i
+                << ": actual=" << actual[i].score
                 << " expected=" << expected[i].score << "\n";
       assert(false);
     }

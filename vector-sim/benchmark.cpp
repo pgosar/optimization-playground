@@ -6,6 +6,7 @@ int main() {
   auto database = init();
 
   const int NUM_RUNS = 50;
+  const float INITIAL_TIME = 5.56092;
   double total_time = 0.0;
   TopKHeap top_k;
 
@@ -20,8 +21,10 @@ int main() {
     total_time += elapsed.count();
     std::cout << "Run " << (i + 1) << ": " << elapsed.count() << "s\n";
   }
-
-  std::cout << "Average time: " << (total_time / NUM_RUNS) << "s\n";
+  float avg_time = total_time / NUM_RUNS;
+  float improvement = INITIAL_TIME / avg_time;
+  std::cout << "Average time: " << avg_time << "s, improvement: " << improvement
+            << "x\n";
 
   std::cout << "Top 1 score: " << std::get<0>(top_k.data[0]) << "\n";
   return 0;
