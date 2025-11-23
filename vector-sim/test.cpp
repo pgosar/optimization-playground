@@ -17,7 +17,9 @@ void test_distance_functions() {
   }
 
   // Cosine similarity
-  float cos_sim = cosine_similarity(a, b);
+  float norm_a = compute_norm(a);
+  float norm_b = compute_norm(b);
+  float cos_sim = cosine_similarity(a, b, norm_a, norm_b);
   assert(cos_sim > 0.99f && cos_sim < 1.01f);
 
   // Euclidean distance
@@ -115,9 +117,9 @@ void test_init() {
   std::cout << "Init function test passed.\n";
 }
 
-float auto_metric(const embedding &a, const embedding &b) {
+float auto_metric(const embedding &a, const embedding &b, float norm_a, float norm_b) {
   if (a[0] > b[0])
-    return cosine_similarity(a, b);
+    return cosine_similarity(a, b, norm_a, norm_b);
   else if (a[1] + b[1] > 1.0f)
     return euclidean_distance(a, b);
   else
@@ -134,6 +136,11 @@ void test_compute_top_k() {
     for (float &v : vec)
       v = dis(rng);
 
+  std::vector<float> norms(NUM_VECTORS);
+  for (int i = 0; i < NUM_VECTORS; i++) {
+    norms[i] = compute_norm(db[i]);
+  }
+
   struct R {
     float score;
     int i, j;
@@ -143,7 +150,7 @@ void test_compute_top_k() {
   // generate ALL ground truth pairs using *same metric logic*
   for (int i = 0; i < NUM_VECTORS; i++) {
     for (int j = 0; j < i; j++) {
-      float s = auto_metric(db[i], db[j]);
+      float s = auto_metric(db[i], db[j], norms[i], norms[j]);
       all_pairs.push_back({s, i, j});
     }
   }
@@ -155,7 +162,7 @@ void test_compute_top_k() {
   std::vector<R> expected(all_pairs.begin(), all_pairs.begin() + K);
 
   // actual result
-  auto top_k = compute_top_k(db);
+  auto top_k = compute_top_k(db, norms);
 
   std::vector<R> actual;
   actual.reserve(K);

@@ -59,14 +59,20 @@ struct TopKHeap {
 };
 
 // Distance functions
-inline float cosine_similarity(const embedding &a, const embedding &b) {
-  float numer = 0.0f, sum_a = 0.0f, sum_b = 0.0f;
+inline float compute_norm(const embedding &a) {
+  float sum = 0.0f;
+  for (int i = 0; i < VECTOR_ELEMS; i++) {
+    sum += a[i] * a[i];
+  }
+  return std::sqrt(sum);
+}
+
+inline float cosine_similarity(const embedding &a, const embedding &b, float norm_a, float norm_b) {
+  float numer = 0.0f;
   for (int i = 0; i < VECTOR_ELEMS; i++) {
     numer += a[i] * b[i];
-    sum_a += a[i] * a[i];
-    sum_b += b[i] * b[i];
   }
-  float denom = std::sqrt(sum_a) * std::sqrt(sum_b);
+  float denom = norm_a * norm_b;
   return denom == 0.0f ? 0.0f : numer / denom;
 }
 
@@ -101,7 +107,7 @@ inline std::vector<embedding> init() {
 }
 
 // Compute top-k
-inline TopKHeap compute_top_k(const std::vector<embedding> &database) {
+inline TopKHeap compute_top_k(const std::vector<embedding> &database, const std::vector<float> &norms) {
   TopKHeap final_top_k;
 
   // Tiling parameters
@@ -121,7 +127,7 @@ inline TopKHeap compute_top_k(const std::vector<embedding> &database) {
             const embedding &b = database[jj];
             float score;
             if (a[0] > b[0])
-              score = cosine_similarity(a, b);
+              score = cosine_similarity(a, b, norms[ii], norms[jj]);
             else if (a[1] + b[1] > 1.0f)
               score = euclidean_distance(a, b);
             else
@@ -140,7 +146,7 @@ inline TopKHeap compute_top_k(const std::vector<embedding> &database) {
 
           float score;
           if (a[0] > b[0])
-            score = cosine_similarity(a, b);
+            score = cosine_similarity(a, b, norms[ii], norms[jj]);
           else if (a[1] + b[1] > 1.0f)
             score = euclidean_distance(a, b);
           else

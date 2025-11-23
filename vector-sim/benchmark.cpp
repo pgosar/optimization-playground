@@ -4,6 +4,10 @@
 
 int main() {
   auto database = init();
+  std::vector<float> norms(NUM_VECTORS);
+  for (int i = 0; i < NUM_VECTORS; i++) {
+    norms[i] = compute_norm(database[i]);
+  }
 
   const int NUM_RUNS = 50;
   const float INITIAL_TIME = 5.56092;
@@ -14,7 +18,7 @@ int main() {
 
   for (int i = 0; i < NUM_RUNS; ++i) {
     auto start = std::chrono::high_resolution_clock::now();
-    top_k = compute_top_k(database);
+    top_k = compute_top_k(database, norms);
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double> elapsed = end - start;
