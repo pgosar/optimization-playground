@@ -162,7 +162,7 @@ void test_compute_top_k() {
   std::vector<R> expected(all_pairs.begin(), all_pairs.begin() + K);
 
   // actual result
-  auto top_k = compute_top_k(db, norms);
+  auto top_k = compute_top_k(db);
 
   std::vector<R> actual;
   actual.reserve(K);
