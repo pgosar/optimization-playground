@@ -1,1 +1,4 @@
 .DS_Store
+vector-sim/historical-benchmark
+vector-sim/historical_baseline.o
+vector-sim/vector-sim-benchmark
